@@ -86,6 +86,7 @@ in
       # Network
       (helpers: with helpers; {
         NETFILTER_FAMILY_BRIDGE = yes;
+        NETFILTER_XT_MATCH_PKTTYPE = module;
         NF_TABLES = yes;
         NF_TABLES_INET = yes;
         NF_TABLES_NETDEV = yes;
@@ -123,7 +124,7 @@ in
         NFT_BRIDGE_REJECT = yes;
         NF_CONNTRACK_BRIDGE = yes;
 
-        WIREGUARD = yes;
+        WIREGUARD = module;
       })
       # Needed for waydroid
       (helpers: with helpers; let
