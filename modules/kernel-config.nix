@@ -4,7 +4,7 @@ let
   inherit (lib)
     mkOption
     types
-  ;
+    ;
 in
 {
   options = {
@@ -83,23 +83,60 @@ in
         BLK_DEV_BSG = yes;
         DEVPTS_MULTIPLE_INSTANCES = whenOlder "4.7" yes;
       })
+      # Network
+      (helpers: with helpers; {
+        NETFILTER_FAMILY_BRIDGE = yes;
+        NF_TABLES = yes;
+        NF_TABLES_INET = yes;
+        NF_TABLES_NETDEV = yes;
+        NFT_NUMGEN = yes;
+        NFT_CT = yes;
+        NFT_CONNLIMIT = yes;
+        NFT_LOG = yes;
+        NFT_LIMIT = yes;
+        NFT_MASQ = yes;
+        NFT_REDIR = yes;
+        NFT_NAT = yes;
+        NFT_TUNNEL = yes;
+        NFT_OBJREF = yes;
+        NFT_QUOTA = yes;
+        NFT_REJECT = yes;
+        NFT_REJECT_INET = yes;
+        NFT_COMPAT = yes;
+        NFT_HASH = yes;
+        NFT_SOCKET = yes;
+        NFT_OSF = yes;
+        NFT_TPROXY = yes;
+        NFT_SYNPROXY = yes;
+        NF_DUP_NETDEV = yes;
+        NFT_DUP_NETDEV = yes;
+        NFT_FWD_NETDEV = yes;
+        NFT_REJECT_NETDEV = yes;
+        NF_TPROXY_IPV4 = yes;
+        NF_TABLES_IPV4 = yes;
+        NFT_REJECT_IPV4 = yes;
+        NF_TPROXY_IPV6 = yes;
+        NF_TABLES_IPV6 = yes;
+        NFT_REJECT_IPV6 = yes;
+        NF_TABLES_BRIDGE = yes;
+        NFT_BRIDGE_META = yes;
+        NFT_BRIDGE_REJECT = yes;
+        NF_CONNTRACK_BRIDGE = yes;
+
+        WIREGUARD = yes;
+      })
       # Needed for waydroid
       (helpers: with helpers; let
         inherit (lib) mkMerge;
         # TODO drop when we fix modular kernels
         module = yes;
-      in {
+      in
+      {
         ANDROID = whenBetween "3.19" "6.0" yes;
         ANDROID_BINDER_IPC = whenAtLeast "3.19" yes;
         ANDROID_BINDERFS = whenAtLeast "5.0" yes;
 
         # Needed for waydroid networking to function
-        NF_TABLES = whenAtLeast "3.13" yes;
-        NF_TABLES_IPV4 = mkMerge [ (whenBetween "3.13" "4.17" module) (whenAtLeast "4.17" yes) ];
-        NF_TABLES_IPV6 = mkMerge [ (whenBetween "3.13" "4.17" module) (whenAtLeast "4.17" yes) ];
-        NF_TABLES_INET = mkMerge [ (whenBetween "3.14" "4.17" module) (whenAtLeast "4.17" yes) ];
-        NFT_MASQ = whenAtLeast "3.18" module;
-        NFT_NAT = whenAtLeast "3.13" module;
         IP_ADVANCED_ROUTER = yes;
         IP_MULTIPLE_TABLES = yes;
         IPV6_MULTIPLE_TABLES = yes;
@@ -116,17 +153,19 @@ in
       })
     ];
 
-    nixpkgs.overlays = [(final: super: {
-      systemBuild-structuredConfig = version:
-        let
-          helpers = lib.kernel // (lib.kernel.whenHelpers version);
-          structuredConfig = 
-            lib.mkMerge
-              (map (fn: fn helpers) config.mobile.kernel.structuredConfig)
-          ;
-        in
+    nixpkgs.overlays = [
+      (final: super: {
+        systemBuild-structuredConfig = version:
+          let
+            helpers = lib.kernel // (lib.kernel.whenHelpers version);
+            structuredConfig =
+              lib.mkMerge
+                (map (fn: fn helpers) config.mobile.kernel.structuredConfig)
+            ;
+          in
           structuredConfig
-      ;
-    })];
+        ;
+      })
+    ];
   };
 }
