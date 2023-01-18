@@ -87,6 +87,9 @@ in
       (helpers: with helpers; {
         NETFILTER_FAMILY_BRIDGE = yes;
         NETFILTER_XT_MATCH_PKTTYPE = yes;
+        NETFILTER_XT_MATCH_COMMENT = yes;
+        NETFILTER_XT_MARK = yes;
+        NETFILTER_XT_CONNMARK = yes;
         NF_TABLES = yes;
         NF_TABLES_INET = yes;
         NF_TABLES_NETDEV = yes;
