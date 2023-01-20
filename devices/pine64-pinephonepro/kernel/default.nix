@@ -1,19 +1,18 @@
-{
-  mobile-nixos
+{ mobile-nixos
 , fetchpatch
 , fetchFromGitLab
 , ...
 }:
 
 mobile-nixos.kernel-builder {
-  version = "6.0.8";
+  version = "6.1.0";
   configfile = ./config.aarch64;
 
   src = fetchFromGitLab {
     owner = "pine64-org";
     repo = "linux";
-    rev = "ppp-6.0.8-ppkb";
-    sha256 = "sha256-t7OwU6wRQlU2XCfS1Vd2yWlWzoneFqO0qPa8AZWIAmU=";
+    rev = "ppp-6.1-20221212-1243";
+    sha256 = "04jsc372xa4zir58qvvwr4iqdmwa9lisxdyygx97aq6m7ldbbg22";
   };
 
   patches = [

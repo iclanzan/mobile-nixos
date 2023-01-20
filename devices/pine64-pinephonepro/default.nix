@@ -16,10 +16,11 @@
     "vt.global_cursor_default=0"
 
     # Needed for kexec
-    "irqchip.gicv3_nolpi=1"
+    # "irqchip.gicv3_nolpi=1"
   ];
 
-  mobile.quirks.supportsStage-0 = true;
+  # Disabled due to visual glitches caused by kexec
+  mobile.quirks.supportsStage-0 = false;
 
   mobile.boot.stage-1 = {
     kernel.package = pkgs.callPackage ./kernel { };
@@ -29,7 +30,8 @@
     soc = "rockchip-rk3399s";
     ram = 1024 * 4;
     screen = {
-      width = 720; height = 1440;
+      width = 720;
+      height = 1440;
     };
   };
 
@@ -37,7 +39,7 @@
   # By design we're not adding a U-Boot package.
   # We're starting to dogfood using Tow-Boot.
 
-  mobile.device.firmware = pkgs.callPackage ./firmware {};
+  mobile.device.firmware = pkgs.callPackage ./firmware { };
   mobile.boot.stage-1.firmware = [
     config.mobile.device.firmware
   ];
@@ -52,7 +54,7 @@
   environment.systemPackages = [ pkgs.mobile-nixos.pine64-alsa-ucm ];
 
   # It seems Pine64 does not have an idVendor...
-  mobile.usb.idVendor = "1209";  # http://pid.codes/1209/
+  mobile.usb.idVendor = "1209"; # http://pid.codes/1209/
   mobile.usb.idProduct = "0069"; # "common tasks, such as testing, generic USB-CDC devices, etc."
 
   # Mainline gadgetfs functions
@@ -67,7 +69,7 @@
     storage.internal = "/dev/disk/by-path/platform-fe330000.mmc";
   };
 
-  mobile.boot.stage-1.tasks = [ ./usb_role_switch_task.rb ];
+  mobile.boot.stage-1.tasks = [ ];
 
   # Minimum driver hardware requirements
   mobile.kernel.structuredConfig = [
@@ -83,7 +85,7 @@
 
       # General wireless
       WIRELESS = yes;
-      
+
       # Bluetooth
       BT = yes;
       BT_HCIUART = yes;
