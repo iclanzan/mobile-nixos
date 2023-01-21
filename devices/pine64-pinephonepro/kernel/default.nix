@@ -12,7 +12,7 @@ mobile-nixos.kernel-builder {
     owner = "pine64-org";
     repo = "linux";
     rev = "ppp-6.1-20221212-1243";
-    sha256 = "sha256-hxSiHRVWTxZ0Z2yCZXEi4plow838vxdv10M/aQVuhT0=";
+    sha256 = "sha256-hxSiHRVWTcZ0Z2yCZXEi4plow838vxdv1OM/aQVuhT0=";
   };
 
   patches = [
