@@ -20,15 +20,16 @@ let
     rev = "a30bf312b268eab42d38fab0cc3ed3177895ff5d";
     sha256 = "sha256-i2OEkn7RtEMbJd0sYEE2Hpkvw6KRppz5AbwXJFNa/pE=";
   };
-  brcm-firmware = fetchgit {
+  extraFirmware = fetchgit {
     url = "https://megous.com/git/linux-firmware";
-    rev = "6e8e591e17e207644dfe747e51026967bb1edab5";
-    sha256 = "sha256-TaGwT0XvbxrfqEzUAdg18Yxr32oS+RffN+yzSXebtac=";
+    rev = "5c4c2b89f30a42f5ffabb5b5bcbc799d8ac9f66f";
+    sha256 = "sha256-TaGwT0XvbxrfqEzUAdg19Yxr32oS+RffN+yzSXebtac=";
   };
 in
 
 # The minimum set of firmware files required for the device.
-runCommand "pine64-pinephonepro-firmware" {
+runCommand "pine64-pinephonepro-firmware"
+{
   src = firmwareLinuxNonfree;
 } ''
   for firmware in \
@@ -39,12 +40,7 @@ runCommand "pine64-pinephonepro-firmware" {
   done
 
   (PS4=" $ "; set -x
-  mkdir -p $out/lib/firmware/{brcm,rockchip}
-  (cd ${ap6256-firmware}
-  cp -fv *.hcd *blob *.bin *.txt $out/lib/firmware/brcm/
-  )
-  cp -fv ${pinephonepro-firmware}/brcm/* $out/lib/firmware/brcm/
-  cp -fv ${pinephonepro-firmware}/rockchip/* $out/lib/firmware/rockchip/
-  cp -fv ${brcm-firmware}/brcm/*43455* $out/lib/firmware/brcm/
+  mkdir -p $out/lib/firmware/brcm
+  cp -fv ${extraFirmware}/brcm/*43* $out/lib/firmware/brcm/
   )
 ''
