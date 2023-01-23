@@ -23,7 +23,7 @@ let
   extraFirmware = fetchgit {
     url = "https://megous.com/git/linux-firmware";
     rev = "5c4c2b89f30a42f5ffabb5b5bcbc799d8ac9f66f";
-    sha256 = "sha256-TaGwT0XvbxrfqEzUAdg19Yxr32oS+RffN+yzSXebtac=";
+    sha256 = "sha256-PLUY3HvZbG2Z3qlXEljw0dN8cMQhl80s/6eIBfttIAg=";
   };
 in
 
