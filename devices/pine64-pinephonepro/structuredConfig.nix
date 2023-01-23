@@ -26,7 +26,7 @@
   PSI = yes;
   IKCONFIG = yes;
   IKCONFIG_PROC = yes;
-  LOG_BUF_SHIFT = 20;
+  LOG_BUF_SHIFT = freeform 20;
   CGROUPS = yes;
   MEMCG = yes;
   BLK_CGROUP = yes;
@@ -41,7 +41,7 @@
   ARCH_ROCKCHIP = yes;
   ARM64_VA_BITS_48 = yes;
   SCHED_MC = yes;
-  NR_CPUS = 8;
+  NR_CPUS = freeform 8;
   HZ_1000 = yes;
   PARAVIRT = yes;
   COMPAT = yes;
@@ -269,8 +269,8 @@
   INPUT_RK805_PWRKEY = yes;
   SERIAL_8250 = yes;
   SERIAL_8250_CONSOLE = yes;
-  SERIAL_8250_NR_UARTS = 8;
-  SERIAL_8250_RUNTIME_UARTS = 8;
+  SERIAL_8250_NR_UARTS = freeform 8;
+  SERIAL_8250_RUNTIME_UARTS = freeform 8;
   SERIAL_8250_DW = yes;
   SERIAL_OF_PLATFORM = yes;
   SERIAL_AMBA_PL011 = yes;
@@ -384,7 +384,7 @@
   USB_SERIAL_OPTION = yes;
   NOP_USB_XCEIV = yes;
   USB_GADGET = yes;
-  USB_GADGET_VBUS_DRAW = 500;
+  USB_GADGET_VBUS_DRAW = freeform 500;
   U_SERIAL_CONSOLE = yes;
   USB_CONFIGFS = yes;
   USB_CONFIGFS_SERIAL = yes;
@@ -525,7 +525,7 @@
   BIG_KEYS = yes;
   ENCRYPTED_KEYS = yes;
   KEY_DH_OPERATIONS = yes;
-  LSM = "yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor";
+  LSM = freeform "yama,loadpin,safesetid,integrity,selinux,smack,tomoyo,apparmor";
   INIT_STACK_NONE = yes;
   CRYPTO_USER = yes;
   CRYPTO_PCRYPT = yes;
@@ -565,16 +565,16 @@
   CORDIC = yes;
   DMA_CMA = yes;
   DMA_PERNUMA_CMA = yes;
-  CMA_SIZE_MBYTES = 64;
+  CMA_SIZE_MBYTES = freeform 64;
   FONTS = yes;
   FONT_8x16 = yes;
   FONT_SUN12x22 = yes;
   FONT_TER16x32 = yes;
-  CONSOLE_LOGLEVEL_DEFAULT = 15;
-  MESSAGE_LOGLEVEL_DEFAULT = 7;
+  CONSOLE_LOGLEVEL_DEFAULT = freeform 15;
+  MESSAGE_LOGLEVEL_DEFAULT = freeform 7;
   DYNAMIC_DEBUG = yes;
   DEBUG_KERNEL = yes;
-  FRAME_WARN = 1024;
+  FRAME_WARN = freeform 1024;
   MAGIC_SYSRQ = yes;
   DEBUG_FS = yes;
   PANIC_ON_OOPS = yes;
