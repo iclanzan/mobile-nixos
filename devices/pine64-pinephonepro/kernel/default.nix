@@ -12,7 +12,7 @@ mobile-nixos.kernel-builder {
     owner = "megous";
     repo = "linux";
     rev = "aa3e5fabfb690946cab52a6ea8de32c3a1fc75e8";
-    sha256 = "sha256-hxSiHRVWTcZ0Z2yCZXEi4plow838vxdv2OM/aQVuhT0=";
+    sha256 = "sha256-yjxl/KHqC3lfE4bgPbLr1eFij6JFjCesiCIQPn0XnAA=";
   };
 
   patches = [
