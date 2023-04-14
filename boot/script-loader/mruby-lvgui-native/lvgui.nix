@@ -9,8 +9,6 @@
 , withSimulator ? false
 }:
 
-let stdenv = pkgs.stdenvAdapters.keepDebugInfo pkgs.stdenv; in
-
 let
   inherit (lib) optional optionals optionalString;
   simulatorDeps = [
@@ -18,7 +16,7 @@ let
   ];
 
   # Minified libinput, both for size and cross-compilation.
-  libinput = (pkgs.libinput.override({
+  libinput = (pkgs.libinput.override ({
     # libwacom doesn't cross-compile at the moment
     libwacom = null;
 
@@ -35,10 +33,10 @@ let
     check = null;
     valgrind = null;
     python3 = null;
-  })).overrideAttrs(old: {
+  })).overrideAttrs (old: {
     buildInputs = with pkgs; [
-      libevdev     
-      mtdev        
+      libevdev
+      mtdev
     ];
     nativeBuildInputs = old.nativeBuildInputs ++ [
       pkgs.buildPackages.udev
@@ -49,94 +47,92 @@ let
   });
 
   # Allow libevdev to cross-compile.
-  libevdev = (pkgs.libevdev.override({
+  libevdev = (pkgs.libevdev.override ({
     python3 = null;
-  })).overrideAttrs({nativeBuildsInputs ? [], ...}: {
+  })).overrideAttrs ({ nativeBuildsInputs ? [ ], ... }: {
     nativeBuildInputs = nativeBuildsInputs ++ [
       pkgs.buildPackages.python3
     ];
   });
-  libxkbcommon = pkgs.callPackage (
-    { stdenv
-    , libxkbcommon
-    , meson
-    , ninja
-    , pkg-config
-    , bison
-    }:
+  libxkbcommon = pkgs.callPackage
+    (
+      { stdenv
+      , libxkbcommon
+      , meson
+      , ninja
+      , pkg-config
+      , bison
+      }:
 
-    libxkbcommon.overrideAttrs({...}: {
-      nativeBuildInputs = [ meson ninja pkg-config bison ];
-      buildInputs = [ ];
+      libxkbcommon.overrideAttrs ({ ... }: {
+        nativeBuildInputs = [ meson ninja pkg-config bison ];
+        buildInputs = [ ];
 
-      mesonFlags = [
-        "-Denable-wayland=false"
-        "-Denable-x11=false"
-        "-Denable-docs=false"
-        "-Denable-xkbregistry=false"
+        mesonFlags = [
+          "-Denable-wayland=false"
+          "-Denable-x11=false"
+          "-Denable-docs=false"
+          "-Denable-xkbregistry=false"
 
-        # This is because we're forcing uses of this build
-        # to define config and locale root; for stage-1 use.
-        # In stage-2, use the regular xkbcommon lib.
-        "-Dxkb-config-root=/NEEDS/OVERRIDE/etc/X11/xkb"
-        "-Dx-locale-root=/NEEDS/OVERRIDE/share/X11/locale"
-      ];
+          # This is because we're forcing uses of this build
+          # to define config and locale root; for stage-1 use.
+          # In stage-2, use the regular xkbcommon lib.
+          "-Dxkb-config-root=/NEEDS/OVERRIDE/etc/X11/xkb"
+          "-Dx-locale-root=/NEEDS/OVERRIDE/share/X11/locale"
+        ];
 
-      outputs = [ "out" "dev" ];
+        outputs = [ "out" "dev" ];
 
-      # Ensures we don't get any stray dependencies.
-      allowedReferences = [
-        "out"
-        "dev"
-        stdenv.cc.libc_lib
-      ];
-    })
+        # Ensures we don't get any stray dependencies.
+        allowedReferences = [
+          "out"
+          "dev"
+          stdenv.cc.libc_lib
+        ];
+      })
 
-  ) {};
+    )
+    { };
 
 in
-  stdenv.mkDerivation {
-    pname = "lvgui";
-    version = "2022-10-26";
+stdenv.mkDerivation {
+  pname = "lvgui";
+  version = "2022-10-26";
 
-    src = fetchFromGitHub {
-      repo = "lvgui";
-      owner = "mobile-nixos";
-      rev = "364397e6294efb53341cc1c54d4885cb21f40567";
-      sha256 = "sha256-0lcXgfTwvvZPC8DYrbhfxL0cfFE1+RELubuoSq+9oOY=";
-    };
+  src = fetchFromGitHub {
+    repo = "lvgui";
+    owner = "mobile-nixos";
+    rev = "364397e6294efb53341cc1c54d4885cb21f40567";
+    sha256 = "sha256-0lcXgfTwvvZPC8DYrbhfxL0cfFE1+RELubuoSq+9oOY=";
+  };
 
-    # Document `LVGL_ENV_SIMULATOR` in the built headers.
-    # This allows the mrbgem to know about it.
-    # (In reality this should be part of a ./configure step or something similar.)
-    postPatch = ''
-      sed -i"" '/^#define LV_CONF_H/a #define LVGL_ENV_SIMULATOR ${if withSimulator then "1" else "0"}' lv_conf.h
-    '';
+  # Document `LVGL_ENV_SIMULATOR` in the built headers.
+  # This allows the mrbgem to know about it.
+  # (In reality this should be part of a ./configure step or something similar.)
+  postPatch = ''
+    sed -i"" '/^#define LV_CONF_H/a #define LVGL_ENV_SIMULATOR ${if withSimulator then "1" else "0"}' lv_conf.h
+  '';
 
-    nativeBuildInputs = [
-      pkg-config
-    ];
+  nativeBuildInputs = [
+    pkg-config
+  ];
 
-    buildInputs = [
-      freetype
-      libevdev
-      libdrm
-      libinput
-      libxkbcommon
-    ]
-    ++ optionals withSimulator simulatorDeps
-    ;
+  buildInputs = [
+    freetype
+    libevdev
+    libdrm
+    libinput
+    libxkbcommon
+  ]
+  ++ optionals withSimulator simulatorDeps
+  ;
 
-    NIX_CFLAGS_COMPILE = [
-      "-DX_DISPLAY_MISSING"
-    ];
+  makeFlags = [
+    "PREFIX=${placeholder "out"}"
+  ]
+  ++ optional withSimulator "LVGL_ENV_SIMULATOR=1"
+  ++ optional (!withSimulator) "LVGL_ENV_SIMULATOR=0"
+  ;
 
-    makeFlags = [
-      "PREFIX=${placeholder "out"}"
-    ]
-    ++ optional withSimulator "LVGL_ENV_SIMULATOR=1"
-    ++ optional (!withSimulator) "LVGL_ENV_SIMULATOR=0"
-    ;
-
-    enableParallelBuilding = true;
-  }
+  enableParallelBuilding = true;
+}
