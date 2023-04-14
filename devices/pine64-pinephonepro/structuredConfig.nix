@@ -357,7 +357,7 @@
   SND_SIMPLE_CARD = yes;
   SND_AUDIO_GRAPH_CARD = yes;
   HID_MULTITOUCH = yes;
-  HIDRAW = yes;
+  # HIDRAW = yes;
   USB_HIDDEV = yes;
   USB_LED_TRIG = yes;
   USB_ULPI_BUS = yes;
