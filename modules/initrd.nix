@@ -1,14 +1,14 @@
 { config, pkgs, lib, utils, ... }:
 
 let
-  udev = pkgs.systemdMinimal;
+  udev = pkgs.systemd;
   inherit (pkgs)
     busybox
     makeInitrd
     mkExtraUtils
     runCommand
     writeText
-  ;
+    ;
   inherit (lib)
     concatMap
     concatStringsSep
@@ -21,25 +21,27 @@ let
     optionalString
     optionals
     types
-  ;
+    ;
   inherit (builtins)
     listToAttrs
     toJSON
-  ;
+    ;
 
   JSONValue = with lib.types; let
-    valueType = nullOr (oneOf [
-      bool
-      int
-      float
-      str
-      (lazyAttrsOf valueType)
-      (listOf valueType)
-    ]) // {
+    valueType = nullOr
+      (oneOf [
+        bool
+        int
+        float
+        str
+        (lazyAttrsOf valueType)
+        (listOf valueType)
+      ]) // {
       description = "JSON value";
-      emptyValue.value = {};
+      emptyValue.value = { };
     };
-  in valueType;
+  in
+  valueType;
 
   inherit (config.mobile.boot.stage-1) earlyInitScripts;
 
@@ -110,15 +112,16 @@ let
   # init environment.
   envRules = writeText "00-env.rules" (
     concatStringsSep "\n"
-    (mapAttrsToList (k: v: ''ENV{${k}}="${v}"'') config.mobile.boot.stage-1.environment)
+      (mapAttrsToList (k: v: ''ENV{${k}}="${v}"'') config.mobile.boot.stage-1.environment)
   );
 
   extraUdevRules = writeText "99-extra.rules" config.mobile.boot.stage-1.extraUdevRules;
 
-  udevRules = runCommand "udev-rules" {
-    allowedReferences = [ extraUtils ];
-    preferLocalBuild = true;
-  } ''
+  udevRules = runCommand "udev-rules"
+    {
+      allowedReferences = [ extraUtils ];
+      preferLocalBuild = true;
+    } ''
     mkdir -p $out
 
     cp -v ${envRules} $out/00-env.rules
@@ -165,11 +168,11 @@ let
     ]
     ++ optionals (stage-1 ? extraUtils) stage-1.extraUtils
     ++ [{
-      package = runCommand "empty" {} "mkdir -p $out";
+      package = runCommand "empty" { } "mkdir -p $out";
       extraCommand =
-      let
-        inherit udev;
-      in
+        let
+          inherit udev;
+        in
         ''
           # Copy udev.
           copy_bin_and_libs ${udev}/bin/udevadm
@@ -186,7 +189,7 @@ let
     ++ optionals withStrace [
       {
         # Remove libunwind, allows us to skip requiring libgcc_s
-        package = pkgs.strace.overrideAttrs(old: { buildInputs = []; });
+        package = pkgs.strace.overrideAttrs (old: { buildInputs = [ ]; });
       }
     ]
     ;
@@ -196,7 +199,7 @@ let
     name = "mobile-nixos-initrd-${device_name}";
     inherit contents;
 
-    compressor =  {
+    compressor = {
       # Default from <nixpkgs/pkgs/build-support/kernel/make-initrd.nix>
       gzip = "gzip -9n";
 
@@ -207,13 +210,14 @@ let
   };
 
   # ncdu -f result/initrd.ncdu
-  initrd-meta = pkgs.runCommand "initrd-${device_name}-meta" {
-    nativeBuildInputs = with pkgs.buildPackages; [
-      ncdu_1
-      cpio
-      tree
-    ];
-  } ''
+  initrd-meta = pkgs.runCommand "initrd-${device_name}-meta"
+    {
+      nativeBuildInputs = with pkgs.buildPackages; [
+        ncdu_1
+        cpio
+        tree
+      ];
+    } ''
     mkdir initrd
     (
     cd initrd
@@ -228,179 +232,179 @@ let
     tree -a ./initrd > $out/tree
   '';
 in
-  {
-    options = {
-      mobile.boot.stage-1.enable = mkOption {
-        type = types.bool;
-        default = config.mobile.enable;
-        description = lib.mdDoc ''
-          Whether to use the Mobile NixOS stage-1 implementation or not.
+{
+  options = {
+    mobile.boot.stage-1.enable = mkOption {
+      type = types.bool;
+      default = config.mobile.enable;
+      description = lib.mdDoc ''
+        Whether to use the Mobile NixOS stage-1 implementation or not.
 
-          This will forcible override the NixOS stage-1 when enabled.
-        '';
-      };
-
-      mobile.boot.stage-1.stage = mkOption {
-        type = types.enum [ 0 1 ];
-        default = 1;
-        description = lib.mdDoc ''
-          Used with a "specialization" of the config to build the "stage-0"
-          init which can kexec into another kernel+initrd found on the system.
-
-          This serves as a replacement to a "proper" bootloader.
-        '';
-        internal = true;
-      };
-      mobile.boot.stage-1.compression = mkOption {
-        type = types.enum [ "gzip" "xz" ];
-        default = "gzip";
-        description = lib.mdDoc ''
-          The compression method for the stage-1 (initrd).
-
-          This may be set as a default by some devices requiring specific
-          compression methods. Most likely to work around size limitations.
-        '';
-      };
-      mobile.boot.stage-1.tasks = mkOption {
-        type = with types; listOf (either package path);
-        default = [];
-        internal = true;
-        description = lib.mdDoc ''
-          Add tasks to the boot/init program.
-          The build system for boot/init will `find -iname '*.rb'` the given paths.
-        '';
-      };
-      mobile.boot.stage-1.bootConfig = mkOption {
-        type = JSONValue;
-        default = {};
-        internal = true;
-        description = lib.mdDoc ''
-          The things being put in the JSON configuration file in stage-1.
-        '';
-      };
-      mobile.boot.stage-1.crashToBootloader = mkOption {
-        type = types.bool;
-        default = false;
-        description = lib.mdDoc ''
-          When the stage-1 bootloader crashes, prefer rebooting directly to
-          bootloader rather than panic by killing init.
-
-          This may be preferrable for devices with direct serial access.
-
-          Note that console ramoops requires the kernel to panic, this should
-          be set to false if you rely on console ramoops to debug issues.
-        '';
-      };
-      mobile.boot.stage-1.earlyInitScripts = mkOption {
-        type = types.lines;
-        default = "";
-        description = lib.mdDoc ''
-          Additional shell commands to run before the actual init.
-
-          Prefer writing a task. This should be used mainly to redirect logging,
-          or do setup that is otherwise impossible in the init, like running it 
-          against strace.
-        '';
-        internal = true;
-      };
-      mobile.boot.stage-1.environment = mkOption {
-        type = types.attrsOf types.str;
-        description = lib.mdDoc ''
-          Environment variables present for the whole stage-1.
-          Keep this as minimal as needed.
-        '';
-        internal = true;
-      };
-      mobile.boot.stage-1.extraUdevRules = mkOption {
-        type = types.lines;
-        default = "";
-        description = lib.mdDoc ''
-          Additional udev rules for stage-1.
-        '';
-        internal = true;
-      };
-
-      mobile.outputs = {
-        extraUtils = mkOption {
-          type = types.package;
-          internal = true;
-          description = lib.mdDoc ''
-            Stripped packages for use in stage-1.
-
-            See `mobile.boot.stage-1.extraUtils`.
-          '';
-        };
-        initrd = mkOption {
-          type = types.str;
-          internal = true;
-          description = lib.mdDoc ''
-            Path to the initrd, likely compressed, for the system.
-          '';
-        };
-        initrd-meta = mkOption {
-          type = types.package;
-          internal = true;
-          description = lib.mdDoc ''
-            Additional metadata about the initrd; used for debugging.
-          '';
-        };
-      };
+        This will forcible override the NixOS stage-1 when enabled.
+      '';
     };
 
-    config = mkIf config.mobile.boot.stage-1.enable {
-      boot.initrd.enable = false;
+    mobile.boot.stage-1.stage = mkOption {
+      type = types.enum [ 0 1 ];
+      default = 1;
+      description = lib.mdDoc ''
+        Used with a "specialization" of the config to build the "stage-0"
+        init which can kexec into another kernel+initrd found on the system.
 
-      # This isn't even used in our initrd...
-      boot.supportedFilesystems = lib.mkOverride 10 [ ];
-      boot.initrd.supportedFilesystems = lib.mkOverride 10 [];
+        This serves as a replacement to a "proper" bootloader.
+      '';
+      internal = true;
+    };
+    mobile.boot.stage-1.compression = mkOption {
+      type = types.enum [ "gzip" "xz" ];
+      default = "gzip";
+      description = lib.mdDoc ''
+        The compression method for the stage-1 (initrd).
 
-      system.build.initialRamdiskSecretAppender =
-        pkgs.writeScriptBin "append-initrd-secrets" "#!${pkgs.coreutils}/bin/true"
-      ;
+        This may be set as a default by some devices requiring specific
+        compression methods. Most likely to work around size limitations.
+      '';
+    };
+    mobile.boot.stage-1.tasks = mkOption {
+      type = with types; listOf (either package path);
+      default = [ ];
+      internal = true;
+      description = lib.mdDoc ''
+        Add tasks to the boot/init program.
+        The build system for boot/init will `find -iname '*.rb'` the given paths.
+      '';
+    };
+    mobile.boot.stage-1.bootConfig = mkOption {
+      type = JSONValue;
+      default = { };
+      internal = true;
+      description = lib.mdDoc ''
+        The things being put in the JSON configuration file in stage-1.
+      '';
+    };
+    mobile.boot.stage-1.crashToBootloader = mkOption {
+      type = types.bool;
+      default = false;
+      description = lib.mdDoc ''
+        When the stage-1 bootloader crashes, prefer rebooting directly to
+        bootloader rather than panic by killing init.
 
-      mobile.outputs = {
-        inherit
-          extraUtils
-          initrd-meta
+        This may be preferrable for devices with direct serial access.
+
+        Note that console ramoops requires the kernel to panic, this should
+        be set to false if you rely on console ramoops to debug issues.
+      '';
+    };
+    mobile.boot.stage-1.earlyInitScripts = mkOption {
+      type = types.lines;
+      default = "";
+      description = lib.mdDoc ''
+        Additional shell commands to run before the actual init.
+
+        Prefer writing a task. This should be used mainly to redirect logging,
+        or do setup that is otherwise impossible in the init, like running it 
+        against strace.
+      '';
+      internal = true;
+    };
+    mobile.boot.stage-1.environment = mkOption {
+      type = types.attrsOf types.str;
+      description = lib.mdDoc ''
+        Environment variables present for the whole stage-1.
+        Keep this as minimal as needed.
+      '';
+      internal = true;
+    };
+    mobile.boot.stage-1.extraUdevRules = mkOption {
+      type = types.lines;
+      default = "";
+      description = lib.mdDoc ''
+        Additional udev rules for stage-1.
+      '';
+      internal = true;
+    };
+
+    mobile.outputs = {
+      extraUtils = mkOption {
+        type = types.package;
+        internal = true;
+        description = lib.mdDoc ''
+          Stripped packages for use in stage-1.
+
+          See `mobile.boot.stage-1.extraUtils`.
+        '';
+      };
+      initrd = mkOption {
+        type = types.str;
+        internal = true;
+        description = lib.mdDoc ''
+          Path to the initrd, likely compressed, for the system.
+        '';
+      };
+      initrd-meta = mkOption {
+        type = types.package;
+        internal = true;
+        description = lib.mdDoc ''
+          Additional metadata about the initrd; used for debugging.
+        '';
+      };
+    };
+  };
+
+  config = mkIf config.mobile.boot.stage-1.enable {
+    boot.initrd.enable = false;
+
+    # This isn't even used in our initrd...
+    boot.supportedFilesystems = lib.mkOverride 10 [ ];
+    boot.initrd.supportedFilesystems = lib.mkOverride 10 [ ];
+
+    system.build.initialRamdiskSecretAppender =
+      pkgs.writeScriptBin "append-initrd-secrets" "#!${pkgs.coreutils}/bin/true"
+    ;
+
+    mobile.outputs = {
+      inherit
+        extraUtils
+        initrd-meta
         ;
-        initrd = "${initrd}/initrd";
-      };
-
-      # This is not a Mobile NixOS output; this is to "dis"-integrate with the
-      # default NixOS outputs. Do not refer to this in Mobile NixOS.
-      system.build.initialRamdisk =
-        if config.mobile.rootfs.shared.enabled
-        then pkgs.runCommand "nullInitialRamdisk" {} "touch $out"
-        else initrd
-      ;
-
-      mobile.boot.stage-1.bootConfig = {
-        inherit (config.mobile.boot.stage-1) stage;
-        device = {
-          name = device_name;
-        };
-        kernel = {
-          inherit (config.mobile.boot.stage-1.kernel) modules;
-        };
-
-        # Literally transmit some nixos configurations.
-        nixos = {
-          boot.specialFileSystems = config.boot.specialFileSystems;
-        };
-
-        inherit bootFileSystems;
-
-        boot = {
-          inherit (config.mobile.boot.stage-1) fail crashToBootloader;
-          inherit (config.mobile.boot.stage-1.shell) shellOnFail;
-        };
-
-        # Transmit all of the mobile NixOS HAL options.
-        HAL = config.mobile.HAL;
-      };
-      mobile.boot.stage-1.environment = {
-        LD_LIBRARY_PATH = "${extraUtils}/lib";
-        PATH = "${extraUtils}/bin";
-      };
+      initrd = "${initrd}/initrd";
     };
-  }
+
+    # This is not a Mobile NixOS output; this is to "dis"-integrate with the
+    # default NixOS outputs. Do not refer to this in Mobile NixOS.
+    system.build.initialRamdisk =
+      if config.mobile.rootfs.shared.enabled
+      then pkgs.runCommand "nullInitialRamdisk" { } "touch $out"
+      else initrd
+    ;
+
+    mobile.boot.stage-1.bootConfig = {
+      inherit (config.mobile.boot.stage-1) stage;
+      device = {
+        name = device_name;
+      };
+      kernel = {
+        inherit (config.mobile.boot.stage-1.kernel) modules;
+      };
+
+      # Literally transmit some nixos configurations.
+      nixos = {
+        boot.specialFileSystems = config.boot.specialFileSystems;
+      };
+
+      inherit bootFileSystems;
+
+      boot = {
+        inherit (config.mobile.boot.stage-1) fail crashToBootloader;
+        inherit (config.mobile.boot.stage-1.shell) shellOnFail;
+      };
+
+      # Transmit all of the mobile NixOS HAL options.
+      HAL = config.mobile.HAL;
+    };
+    mobile.boot.stage-1.environment = {
+      LD_LIBRARY_PATH = "${extraUtils}/lib";
+      PATH = "${extraUtils}/bin";
+    };
+  };
+}
